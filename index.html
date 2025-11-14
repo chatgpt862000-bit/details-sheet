@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Cow Dashboard - Card View</title>
+
+<style>
+    body {
+        font-family: Arial;
+        background: #f4f6f9;
+        margin: 0; padding: 15px;
+    }
+
+    h2 {
+        text-align: center;
+        margin-bottom: 15px;
+    }
+
+    #searchBox {
+        width: 95%;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 8px;
+        border: 1px solid #aaa;
+        margin: auto;
+        display: block;
+        margin-bottom: 20px;
+    }
+
+    .container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 15px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 12px;
+        padding: 15px;
+        box-shadow: 0 2px 8px #0002;
+        position: relative;
+    }
+
+    .badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        padding: 5px 10px;
+        border-radius: 6px;
+        color: white;
+        font-size: 12px;
+    }
+
+    .badge.red { background: #e53935; }
+    .badge.yellow { background: #fbc02d; color: black; }
+    .badge.green { background: #43a047; }
+
+    .view-btn {
+        background: #2196F3;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: none;
+        cursor: pointer;
+        width: 100%;
+        margin-top: 10px;
+    }
+
+    /* Popup window */
+    #popup {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: #0007;
+        justify-content: center;
+        align-items: center;
+    }
+
+    #popupContent {
+        background: white;
+        padding: 20px;
+        width: 90%;
+        max-width: 400px;
+        border-radius: 10px;
+    }
+
+    #closeBtn {
+        background: red;
+        color: white;
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        float: right;
+        cursor: pointer;
+    }
+
+</style>
+</head>
+
+<body>
+
+<h2>AA</h2>
+
+<input id="searchBox" placeholder="Search cow, breed, status...">
+
+<div class="container" id="cardContainer"></div>
+
+<!-- Popup -->
+<div id="popup">
+    <div id="popupContent">
+        <button id="closeBtn">Close</button>
+        <h3 id="pName"></h3>
+        <p id="pDetails"></p>
+    </div>
+</div>
+
+<script>
+const csvUrl =
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vSFLGioCUdZbAR_v2KaInBD_GVts9csvUr4Mzz6s5_p1YSAcLPPRg16bnO-9s5UKjb_rqECjzMqAGgd/pub?gid=249634938&single=true&output=csv";
+
+function formatDate(val) {
+    if (!val || val.trim()==="") return "";
+    const d = new Date(val);
+    if (isNaN(d)) return val;
+    return d.toISOString().split("T")[0];
+}
+
+fetch(csvUrl)
+.then(r => r.text())
+.then(text => {
+    const rows = text.split("\n").map(r => r.split(","));
+    const headers = rows[0];
+    const container = document.getElementById("cardContainer");
+
+    rows.slice(1).forEach(row => {
+        let obj = {};
+        headers.forEach((h,i)=> obj[h] = row[i]);
+
+        // Delivery highlight
+        let delDate = new Date(obj["Delivery date"]);
+        let diffDays = (delDate - new Date()) / (1000*60*60*24);
+
+        let badgeClass = "green";
+        let badgeText = "Far";
+
+        if (diffDays < 7) {
+            badgeClass = "red"; badgeText = "Due Soon!";
+        } else if (diffDays < 30) {
+            badgeClass = "yellow"; badgeText = "Coming";
+        }
+
+        const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+            <div class="badge ${badgeClass}">${badgeText}</div>
+            <h3>${obj["Cow"]}</h3>
+            <p><b>Breed:</b> ${obj["Breed"]}</p>
+            <p><b>Status:</b> ${obj["Status"]}</p>
+            <p><b>Delivery:</b> ${formatDate(obj["Delivery date"])}</p>
+
+            <button class="view-btn" onclick='showProfile(${JSON.stringify(obj)})'>
+                View Profile
+            </button>
+        `;
+
+        container.appendChild(card);
+    });
+});
+
+// Popup
+function showProfile(data) {
+    document.getElementById("popup").style.display = "flex";
+    document.getElementById("pName").innerText = data["Cow"];
+
+    let html = "";
+    for (const key in data) {
+        html += `<b>${key}:</b> ${data[key]}<br>`;
+    }
+    document.getElementById("pDetails").innerHTML = html;
+}
+
+document.getElementById("closeBtn").onclick = () => 
+    document.getElementById("popup").style.display = "none";
+
+// Search
+document.getElementById("searchBox").addEventListener("keyup", function(){
+    let filter = this.value.toLowerCase();
+    let cards = document.querySelectorAll(".card");
+
+    cards.forEach(card => {
+        card.style.display = card.innerText.toLowerCase().includes(filter) ? "" : "none";
+    });
+});
+</script>
+
+</body>
+</html>
