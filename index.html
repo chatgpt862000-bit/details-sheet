@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Cow Dashboard - Card View</title>
+<title>Cow Dashboard - Card View (Fixed)</title>
 
 <style>
     body {
@@ -54,6 +54,7 @@
     .badge.red { background: #e53935; }
     .badge.yellow { background: #fbc02d; color: black; }
     .badge.green { background: #43a047; }
+    .badge.gray { background: #9e9e9e; }
 
     .view-btn {
         background: #2196F3;
@@ -81,7 +82,7 @@
         background: white;
         padding: 20px;
         width: 90%;
-        max-width: 400px;
+        max-width: 500px;
         border-radius: 10px;
     }
 
@@ -95,6 +96,8 @@
         cursor: pointer;
     }
 
+    .field-row { margin-bottom: 6px; }
+    .field-label { font-weight: 600; }
 </style>
 </head>
 
@@ -111,73 +114,160 @@
     <div id="popupContent">
         <button id="closeBtn">Close</button>
         <h3 id="pName"></h3>
-        <p id="pDetails"></p>
+        <div id="pDetails"></div>
     </div>
 </div>
+
+<!-- PapaParse CDN -->
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <script>
 const csvUrl =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSFLGioCUdZbAR_v2KaInBD_GVts9csvUr4Mzz6s5_p1YSAcLPPRg16bnO-9s5UKjb_rqECjzMqAGgd/pub?gid=249634938&single=true&output=csv";
 
+/**
+ * Try to robustly convert a string to a Date object.
+ * Returns a Date or null if it cannot be parsed.
+ */
+function parseDateFlexible(val) {
+    if (!val) return null;
+    // Trim whitespace
+    val = String(val).trim();
+    if (val === "") return null;
+
+    // Try native Date
+    let d = new Date(val);
+    if (!isNaN(d)) return d;
+
+    // Try common formats: dd/mm/yyyy or dd-mm-yyyy or yyyy/mm/dd
+    const partsSlash = val.split("/");
+    const partsDash = val.split("-");
+    const parts = partsSlash.length > 1 ? partsSlash : (partsDash.length > 1 ? partsDash : []);
+    if (parts.length === 3) {
+        // Determine which order by length of first part (year likely 4 digits)
+        if (parts[0].length === 4) { // yyyy-mm-dd
+            d = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
+        } else {
+            // assume dd/mm/yyyy -> convert to yyyy-mm-dd
+            const [p1,p2,p3] = parts;
+            d = new Date(`${p3}-${p2.padStart(2,'0')}-${p1.padStart(2,'0')}`);
+        }
+        if (!isNaN(d)) return d;
+    }
+
+    // Try Excel-style numeric date (days since 1899-12-31) if it's a number
+    const num = Number(val);
+    if (!isNaN(num) && num > 2000) { // a heuristic: large numbers in sheet might be timestamps
+        // some spreadsheets export as epoch ms
+        const tryMs = new Date(num);
+        if (!isNaN(tryMs)) return tryMs;
+    }
+    if (!isNaN(num) && num > 30 && num < 60000) {
+        // treat as Excel serial date
+        const excelEpoch = new Date(Date.UTC(1899,11,30)); // 1899-12-30 is day 0 in Excel (approx)
+        const ms = num * 24 * 60 * 60 * 1000;
+        d = new Date(excelEpoch.getTime() + ms);
+        if (!isNaN(d)) return d;
+    }
+
+    // give up
+    return null;
+}
+
 function formatDate(val) {
-    if (!val || val.trim()==="") return "";
-    const d = new Date(val);
-    if (isNaN(d)) return val;
+    if (!val) return "";
+    const d = (val instanceof Date) ? val : parseDateFlexible(val);
+    if (!d) return val;
     return d.toISOString().split("T")[0];
 }
 
-fetch(csvUrl)
-.then(r => r.text())
-.then(text => {
-    const rows = text.split("\n").map(r => r.split(","));
-    const headers = rows[0];
-    const container = document.getElementById("cardContainer");
+// Use PapaParse to download and parse header:true
+Papa.parse(csvUrl, {
+    download: true,
+    header: true,
+    skipEmptyLines: true,
+    complete: function(results) {
+        const data = results.data || [];
+        renderCards(data);
+    },
+    error: function(err) {
+        console.error("CSV parse error:", err);
+        document.getElementById("cardContainer").innerText = "Failed to load sheet — check URL/CORS or CSV format.";
+    }
+});
 
-    rows.slice(1).forEach(row => {
-        let obj = {};
-        headers.forEach((h,i)=> obj[h] = row[i]);
+function renderCards(rows) {
+    const container = document.getElementById("cardContainer");
+    container.innerHTML = "";
+
+    const today = new Date();
+    const msPerDay = 1000*60*60*24;
+
+    rows.forEach(row => {
+        // row is an object mapping header -> value
+        // skip completely empty rows
+        const values = Object.values(row).map(v => (v||"").toString().trim());
+        const allEmpty = values.every(v => v === "");
+        if (allEmpty) return;
 
         // Delivery highlight
-        let delDate = new Date(obj["Delivery date"]);
-        let diffDays = (delDate - new Date()) / (1000*60*60*24);
+        const rawDelivery = row["Delivery date"] || row["Delivery Date"] || row["delivery date"] || row["delivery_date"] || "";
+        const delDate = parseDateFlexible(rawDelivery);
+        let badgeClass = "gray";
+        let badgeText = "No date";
 
-        let badgeClass = "green";
-        let badgeText = "Far";
-
-        if (diffDays < 7) {
-            badgeClass = "red"; badgeText = "Due Soon!";
-        } else if (diffDays < 30) {
-            badgeClass = "yellow"; badgeText = "Coming";
+        if (delDate) {
+            const diffDays = Math.ceil((delDate - today) / msPerDay);
+            if (isNaN(diffDays)) {
+                badgeClass = "gray"; badgeText = "Invalid date";
+            } else if (diffDays < 0) {
+                badgeClass = "red"; badgeText = `${Math.abs(diffDays)} day(s) overdue`;
+            } else if (diffDays < 7) {
+                badgeClass = "red"; badgeText = "Due Soon!";
+            } else if (diffDays < 30) {
+                badgeClass = "yellow"; badgeText = "Coming";
+            } else {
+                badgeClass = "green"; badgeText = "On Track";
+            }
         }
 
         const card = document.createElement("div");
         card.className = "card";
 
+        const cowName = row["Cow"] || row["cow"] || row["Name"] || "Unknown";
+
+        // build inner HTML without embedding the entire object in onclick
         card.innerHTML = `
             <div class="badge ${badgeClass}">${badgeText}</div>
-            <h3>${obj["Cow"]}</h3>
-            <p><b>Breed:</b> ${obj["Breed"]}</p>
-            <p><b>Status:</b> ${obj["Status"]}</p>
-            <p><b>Delivery:</b> ${formatDate(obj["Delivery date"])}</p>
-
-            <button class="view-btn" onclick='showProfile(${JSON.stringify(obj)})'>
-                View Profile
-            </button>
+            <h3>${escapeHtml(cowName)}</h3>
+            <p><b>Breed:</b> ${escapeHtml(row["Breed"] || row["breed"] || "")}</p>
+            <p><b>Status:</b> ${escapeHtml(row["Status"] || row["status"] || "")}</p>
+            <p><b>Delivery:</b> ${formatDate(delDate || rawDelivery)}</p>
         `;
+
+        const btn = document.createElement("button");
+        btn.className = "view-btn";
+        btn.innerText = "View Profile";
+        btn.addEventListener("click", () => showProfile(row));
+        card.appendChild(btn);
 
         container.appendChild(card);
     });
-});
+}
 
-// Popup
+// Show popup profile
 function showProfile(data) {
     document.getElementById("popup").style.display = "flex";
-    document.getElementById("pName").innerText = data["Cow"];
+    const pName = data["Cow"] || data["cow"] || data["Name"] || "Unknown";
+    document.getElementById("pName").innerText = pName;
 
     let html = "";
-    for (const key in data) {
-        html += `<b>${key}:</b> ${data[key]}<br>`;
-    }
+    // show all keys in a consistent order
+    const keys = Object.keys(data);
+    keys.forEach(key => {
+        const val = data[key] || "";
+        html += `<div class="field-row"><span class="field-label">${escapeHtml(key)}:</span> ${escapeHtml(val)}</div>`;
+    });
     document.getElementById("pDetails").innerHTML = html;
 }
 
@@ -193,6 +283,17 @@ document.getElementById("searchBox").addEventListener("keyup", function(){
         card.style.display = card.innerText.toLowerCase().includes(filter) ? "" : "none";
     });
 });
+
+// small helper to avoid HTML injection
+function escapeHtml(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+}
 </script>
 
 </body>
