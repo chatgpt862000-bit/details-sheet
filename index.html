@@ -151,11 +151,11 @@ function parseDateFlexible(val) {
     if (parts.length === 3) {
         // Determine which order by length of first part (year likely 4 digits)
         if (parts[0].length === 4) { // yyyy-mm-dd
-            d = new Date(`${parts[0]}-${parts[1]}-${parts[2]}`);
+            d = new Date(${parts[0]}-${parts[1]}-${parts[2]});
         } else {
             // assume dd/mm/yyyy -> convert to yyyy-mm-dd
             const [p1,p2,p3] = parts;
-            d = new Date(`${p3}-${p2.padStart(2,'0')}-${p1.padStart(2,'0')}`);
+            d = new Date(${p3}-${p2.padStart(2,'0')}-${p1.padStart(2,'0')});
         }
         if (!isNaN(d)) return d;
     }
@@ -206,7 +206,7 @@ function renderCards(rows) {
     container.innerHTML = "";
 
     const today = new Date();
-    const msPerDay = 1000*60*60*24;
+    const msPerDay = 10006060*24;
 
     rows.forEach(row => {
         // row is an object mapping header -> value
@@ -226,7 +226,7 @@ function renderCards(rows) {
             if (isNaN(diffDays)) {
                 badgeClass = "gray"; badgeText = "Invalid date";
             } else if (diffDays < 0) {
-                badgeClass = "red"; badgeText = `${Math.abs(diffDays)} day(s) overdue`;
+                badgeClass = "red"; badgeText = ${Math.abs(diffDays)} day(s) overdue;
             } else if (diffDays < 7) {
                 badgeClass = "red"; badgeText = "Due Soon!";
             } else if (diffDays < 30) {
@@ -271,7 +271,7 @@ function showProfile(data) {
     const keys = Object.keys(data);
     keys.forEach(key => {
         const val = data[key] || "";
-        html += `<div class="field-row"><span class="field-label">${escapeHtml(key)}:</span> ${escapeHtml(val)}</div>`;
+        html += <div class="field-row"><span class="field-label">${escapeHtml(key)}:</span> ${escapeHtml(val)}</div>;
     });
     document.getElementById("pDetails").innerHTML = html;
 }
