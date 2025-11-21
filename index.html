@@ -52,7 +52,6 @@
         margin-top: 10px;
     }
 
-    /* Popup window */
     #popup, #expensePopup {
         display: none;
         position: fixed;
@@ -91,7 +90,6 @@
 <h1>Sahyadri Dairy Farm</h1>
 <h2>Cow Details</h2>
 
-<!-- EXPENSE BUTTON (Visible) -->
 <div style="text-align:center; margin-bottom:20px;">
     <button id="expenseBtn"
         style="background:#1E88E5; color:white; border:none;
@@ -105,7 +103,8 @@
 
 <div class="container" id="cardContainer"></div>
 
-<!-- Cow Profile Popup -->
+
+<!-- Cow Popup -->
 <div id="popup">
     <div id="popupContent">
         <button id="closeBtn">Close</button>
@@ -120,16 +119,15 @@
         <button id="expenseClose">Close</button>
         <h3>Expense Summary</h3>
 
-        <!-- Filter Controls -->
         <div style="margin-bottom:15px;">
             <label><b>Year From:</b></label>
-            <select id="yearFrom" style="padding:6px; border-radius:5px;"></select>
+            <select id="yearFrom"></select>
 
             <label><b>Year To:</b></label>
-            <select id="yearTo" style="padding:6px; border-radius:5px;"></select>
+            <select id="yearTo"></select>
 
             <label><b>Category:</b></label>
-            <select id="expCategory" style="padding:6px; border-radius:5px;">
+            <select id="expCategory">
                 <option value="">All</option>
             </select>
         </div>
@@ -138,7 +136,6 @@
     </div>
 </div>
 
-<!-- PapaParse CDN -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 
 <script>
@@ -150,10 +147,10 @@
 const csvUrl =
 "https://docs.google.com/spreadsheets/d/e/2PACX-1vSFLGioCUdZbAR_v2KaInBD_GVts9csvUr4Mzz6s5_p1YSAcLPPRg16bnO-9s5UKjb_rqECjzMqAGgd/pub?gid=249634938&single=true&output=csv";
 
-// Expense Sheet (UPDATE GID)
-
+// FIXED Expense CSV URL
 const expenseCsvUrl =
-"https://docs.google.com/spreadsheets/d/1EfWtzWavjWsFhsu9IYaPIS6C4vaTpCaQ-QMbB7lmPx4/pub?gid=1547099893&single=true&output=csv";
+"https://docs.google.com/spreadsheets/d/1EfWtzWavjWsFhsu9IYaPIS6C4vaTpCaQ-QMbB7lmPx4/export?format=csv&gid=1547099893";
+
 
 // -------------------------
 // DATE HANDLING
@@ -260,9 +257,8 @@ function prepareExpenseFilters(rows) {
     let categories = new Set();
 
     rows.forEach(row => {
-        const d = parseDateFlexible(row["Timestamp"] || row["Date"]);
+        const d = parseDateFlexible(row["Date"]);
         if (d) years.add(d.getFullYear());
-
         if (row["Category"]) categories.add(row["Category"].trim());
     });
 
@@ -281,8 +277,10 @@ function prepareExpenseFilters(rows) {
         YT.innerHTML += `<option value="${y}">${y}</option>`;
     });
 
-    YF.value = years[0];
-    YT.value = years[years.length - 1];
+    if (years.length > 0) {
+        YF.value = years[0];
+        YT.value = years[years.length - 1];
+    }
 
     CAT.innerHTML = `<option value="">All</option>`;
     categories.forEach(c => {
@@ -303,12 +301,12 @@ function filterAndShowExpenses() {
     let overall = 0;
 
     expenseRows.forEach(row => {
-        const d = parseDateFlexible(row["Timestamp"] || row["Date"]);
+        const d = parseDateFlexible(row["Date"]);
         if (!d) return;
 
         let yr = d.getFullYear();
         let cat = (row["Category"] || "").trim();
-        let amt = parseFloat(row["Rs"] || row["Amount"] || 0);
+        let amt = parseFloat(row["Amount"] || row["Rs"] || 0);
 
         if (!cat || isNaN(amt)) return;
 
