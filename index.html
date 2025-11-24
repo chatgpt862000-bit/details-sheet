@@ -15,8 +15,9 @@
   .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
   label{font-weight:600}
   select,input{padding:6px;border-radius:6px;border:1px solid #ccc}
-  .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
-  canvas{background:#fff;border-radius:6px;padding:8px}
+  .charts-grid{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+  .charts-grid > div{width:100%}
+  canvas{background:#fff;border-radius:6px;padding:8px;box-sizing:border-box;width:100% !important;height:auto !important}
   table{width:100%;border-collapse:collapse}
   th,td{padding:8px;border:1px solid #ddd;text-align:left}
 </style>
@@ -358,7 +359,7 @@ function prepareMilkCharts(rows){
     // prefer Start Date, fallback to Timestamp
     const sd = parseDateFlexible(r["Start Date"]||r["StartDate"]||r["Timestamp"]||r["timestamp"]);
     if(!sd) return;
-    const milk = parseFloat( (r["Produce Milk"]||r["ProduceMilk"]||r["Produce_milk"]||r["milk"]||"0").toString().replace(/,/g,'') ) || 0;
+    const milk = parseFloat( (r["Total Milk Count"]||r["Total Milk Count"]||r["Produce_milk"]||r["Total Milk Count"]||"0").toString().replace(/,/g,'') ) || 0;
     const income = parseFloat( (r["Payment"]||r["Income"]||"0").toString().replace(/,/g,'') ) || 0;
     const cow = r["Cow"] || r["cow"] || r["Animal"] || "";
     points.push({ date: sd, milk, income, cow });
