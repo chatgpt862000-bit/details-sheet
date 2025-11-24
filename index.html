@@ -2,367 +2,445 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Sahyadri Dairy Farm - Dashboard</title>
-
+<title>Sahyadri Dairy Farm - Dashboard (Charts)</title>
 <style>
-    body {
-        font-family: Arial;
-        background: #f4f6f9;
-        margin: 0; padding: 15px;
-    }
-
-    h2, h1 {
-        text-align: center;
-        margin-bottom: 15px;
-    }
-
-    #searchBox {
-        width: 95%;
-        padding: 10px;
-        font-size: 16px;
-        border-radius: 8px;
-        border: 1px solid #aaa;
-        margin: auto;
-        display: block;
-        margin-bottom: 20px;
-    }
-
-    .container {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        gap: 15px;
-    }
-
-    .card {
-        background: white;
-        border-radius: 12px;
-        padding: 15px;
-        box-shadow: 0 2px 8px #0002;
-        position: relative;
-    }
-
-    .view-btn {
-        background: #2196F3;
-        color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
-        border: none;
-        cursor: pointer;
-        width: 100%;
-        margin-top: 10px;
-    }
-
-    #popup, #expensePopup {
-        display: none;
-        position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: #0007;
-        justify-content: center;
-        align-items: center;
-    }
-
-    #popupContent, .expense-box {
-        background: white;
-        padding: 20px;
-        width: 90%;
-        max-width: 500px;
-        border-radius: 10px;
-    }
-
-    #closeBtn, #expenseClose {
-        background: red;
-        color: white;
-        padding: 6px 12px;
-        border: none;
-        border-radius: 6px;
-        float: right;
-        cursor: pointer;
-    }
-
-    .field-row { margin-bottom: 6px; }
-    .field-label { font-weight: 600; }
+  body{font-family:Arial;margin:15px;background:#f4f6f9}
+  h1,h2{text-align:center}
+  .container{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:15px}
+  .card{background:#fff;padding:15px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.12)}
+  .view-btn{background:#2196F3;color:white;padding:8px;border-radius:6px;border:none;cursor:pointer;width:100%;margin-top:10px}
+  #popup,#expensePopup{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#0007;justify-content:center;align-items:center}
+  #popupContent,.expense-box{background:#fff;padding:20px;width:90%;max-width:900px;border-radius:10px;max-height:90vh;overflow:auto}
+  #closeBtn,#expenseClose{background:#e53935;color:#fff;border:none;padding:6px 10px;border-radius:6px;cursor:pointer;float:right}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  label{font-weight:600}
+  select,input{padding:6px;border-radius:6px;border:1px solid #ccc}
+  .charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px}
+  canvas{background:#fff;border-radius:6px;padding:8px}
+  table{width:100%;border-collapse:collapse}
+  th,td{padding:8px;border:1px solid #ddd;text-align:left}
 </style>
 </head>
-
 <body>
-
 <h1>Sahyadri Dairy Farm</h1>
 <h2>Cow Details</h2>
 
-<div style="text-align:center; margin-bottom:20px;">
-    <button id="expenseBtn"
-        style="background:#1E88E5; color:white; border:none;
-               padding:12px 20px; border-radius:8px; font-size:16px;
-               cursor:pointer;">
-        📊 View Expenses
-    </button>
+<div style="text-align:center;margin-bottom:12px">
+  <button id="expenseBtn" style="background:#1E88E5;color:#fff;padding:10px 16px;border-radius:8px;border:none;cursor:pointer">📊 View Expenses & Charts</button>
 </div>
 
-<input id="searchBox" placeholder="Search cow, breed, status...">
+<input id="searchBox" placeholder="Search cow, breed, status..." style="width:95%;padding:10px;border-radius:8px;border:1px solid #aaa;display:block;margin:0 auto 14px">
 
 <div class="container" id="cardContainer"></div>
 
-
-<!-- Cow Popup -->
+<!-- Cow popup -->
 <div id="popup">
-    <div id="popupContent">
-        <button id="closeBtn">Close</button>
-        <h3 id="pName"></h3>
-        <div id="pDetails"></div>
-    </div>
+  <div id="popupContent">
+    <button id="closeBtn">Close</button>
+    <h3 id="pName"></h3>
+    <div id="pDetails"></div>
+  </div>
 </div>
 
-<!-- Expense Popup -->
+<!-- Expense + Charts popup -->
 <div id="expensePopup">
-    <div class="expense-box">
-        <button id="expenseClose">Close</button>
-        <h3>Expense Summary</h3>
+  <div class="expense-box">
+    <button id="expenseClose">Close</button>
+    <h3>Expense & Charts</h3>
 
-        <div style="margin-bottom:15px;">
-            <label><b>Year From:</b></label>
-            <select id="yearFrom"></select>
-
-            <label><b>Year To:</b></label>
-            <select id="yearTo"></select>
-
-            <label><b>Category:</b></label>
-            <select id="expCategory">
-                <option value="">All</option>
-            </select>
-        </div>
-
-        <div id="expenseData"></div>
+    <div class="filters">
+      <label>Year From:</label><select id="yearFrom"></select>
+      <label>Year To:</label><select id="yearTo"></select>
+      <label>Category:</label><select id="expCategory"><option value="">All</option></select>
     </div>
+
+    <div id="expenseData"></div>
+
+    <div class="charts-grid">
+      <div>
+        <h4 style="margin:6px 0">Expense by Category (Bar)</h4>
+        <canvas id="expenseBarChart" width="400" height="240"></canvas>
+      </div>
+
+      <div>
+        <h4 style="margin:6px 0">Category Share (Pie)</h4>
+        <canvas id="expensePieChart" width="400" height="240"></canvas>
+      </div>
+
+      <div>
+        <h4 style="margin:6px 0">Monthly Expense (Line)</h4>
+        <canvas id="monthlyExpenseLine" width="400" height="240"></canvas>
+      </div>
+
+      <div>
+        <h4 style="margin:6px 0">Income vs Expense (Monthly)</h4>
+        <canvas id="incomeExpenseChart" width="400" height="240"></canvas>
+      </div>
+
+      <div style="grid-column:1 / -1">
+        <h4 style="margin:6px 0">Milk Production (by Start Date)</h4>
+        <canvas id="milkLineChart" width="1000" height="300"></canvas>
+      </div>
+
+      <div style="grid-column:1 / -1">
+        <h4 style="margin:6px 0">Monthly Milk (Aggregated)</h4>
+        <canvas id="monthlyMilkLine" width="1000" height="300"></canvas>
+      </div>
+
+      <div style="grid-column:1 / -1">
+        <h4 style="margin:6px 0">Milk Production per Cow (if present)</h4>
+        <canvas id="milkPerCowChart" width="1000" height="300"></canvas>
+      </div>
+    </div>
+
+  </div>
 </div>
 
+<!-- libs -->
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <script>
-// -------------------------
-// GOOGLE SHEET CSV URLs
-// -------------------------
+/* -------------------------
+   CONFIG - your published CSV links
+   ------------------------- */
+const cowCsvUrl =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSFLGioCUdZbAR_v2KaInBD_GVts9csvUr4Mzz6s5_p1YSAcLPPRg16bnO-9s5UKjb_rqECjzMqAGgd/pub?gid=249634938&single=true&output=csv";
 
-// Cow sheet
-const csvUrl =
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vSFLGioCUdZbAR_v2KaInBD_GVts9csvUr4Mzz6s5_p1YSAcLPPRg16bnO-9s5UKjb_rqECjzMqAGgd/pub?gid=249634938&single=true&output=csv";
-
-// FIXED Expense CSV URL
 const expenseCsvUrl =
-"https://docs.google.com/spreadsheets/d/e/2PACX-1vSFLGioCUdZbAR_v2KaInBD_GVts9csvUr4Mzz6s5_p1YSAcLPPRg16bnO-9s5UKjb_rqECjzMqAGgd/pub?gid=1547099893&single=true&output=csv";
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSFLGioCUdZbAR_v2KaInBD_GVts9csvUr4Mzz6s5_p1YSAcLPPRg16bnO-9s5UKjb_rqECjzMqAGgd/pub?gid=1547099893&single=true&output=csv";
 
+const milkCsvUrl =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vSFLGioCUdZbAR_v2KaInBD_GVts9csvUr4Mzz6s5_p1YSAcLPPRg16bnO-9s5UKjb_rqECjzMqAGgd/pub?gid=2081043536&single=true&output=csv";
 
+/* -------------------------
+   Utilities
+   ------------------------- */
+function cleanHeader(h){ return String(h||"").trim().replace(/^\uFEFF/,""); }
 
-// -------------------------
-// DATE HANDLING
-// -------------------------
-function parseDateFlexible(val) {
-    if (!val) return null;
-    val = String(val).trim();
-    let d = new Date(val);
-    if (!isNaN(d)) return d;
-
-    const p = val.includes("/") ? val.split("/") : val.split("-");
-    if (p.length === 3) {
-        if (p[0].length === 4) return new Date(`${p[0]}-${p[1]}-${p[2]}`);
-        return new Date(`${p[2]}-${p[1]}-${p[0]}`);
-    }
-    return null;
+function parseDateFlexible(val){
+  if(!val) return null;
+  val = String(val).trim();
+  // try Date parse first
+  let d = new Date(val);
+  if(!isNaN(d)) return d;
+  // try common formats dd/mm/yyyy or yyyy-mm-dd
+  let p = val.includes("/") ? val.split("/") : val.split("-");
+  if(p.length===3){
+    // if first element is 4 digits assume yyyy-mm-dd
+    if(p[0].length===4) return new Date(`${p[0]}-${p[1]}-${p[2]}`);
+    return new Date(`${p[2]}-${p[1]}-${p[0]}`);
+  }
+  return null;
 }
 
-
-// -------------------------
-// LOAD COW DATA
-// -------------------------
-Papa.parse(csvUrl, {
-    download: true,
-    header: true,
-    skipEmptyLines: true,
-    complete: function(results) {
-        renderCards(results.data || []);
-    }
-});
-
-function renderCards(rows) {
-    const container = document.getElementById("cardContainer");
-    container.innerHTML = "";
-
-    rows.forEach(row => {
-        if (Object.values(row).every(v => !v)) return;
-
-        const card = document.createElement("div");
-        card.className = "card";
-
-        const cowName = row["Cow"] || row["Name"] || "Unknown";
-
-        card.innerHTML = `
-            <h3>${escapeHtml(cowName)}</h3>
-            <p><b>Breed:</b> ${escapeHtml(row["Breed"] || "")}</p>
-            <p><b>Status:</b> ${escapeHtml(row["Status"] || "")}</p>
-        `;
-
-        const btn = document.createElement("button");
-        btn.className = "view-btn";
-        btn.innerText = "View Profile";
-        btn.onclick = () => showProfile(row);
-
-        card.appendChild(btn);
-        container.appendChild(card);
-    });
+function monthKey(d){
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`; // YYYY-MM
 }
 
-
-// -------------------------
-// SHOW COW POPUP
-// -------------------------
-function showProfile(data) {
-    document.getElementById("popup").style.display = "flex";
-    document.getElementById("pName").innerText =
-        data["Cow"] || data["Name"] || "Unknown";
-
-    let html = "";
-    Object.keys(data).forEach(k => {
-        html += `<div class="field-row">
-            <span class="field-label">${escapeHtml(k)}:</span> ${escapeHtml(data[k])}
-        </div>`;
-    });
-
-    document.getElementById("pDetails").innerHTML = html;
+function createOrUpdateChart(refVar, ctx, config){
+  if(refVar.chartInstance){ refVar.chartInstance.destroy(); }
+  refVar.chartInstance = new Chart(ctx, config);
 }
 
-document.getElementById("closeBtn").onclick = () =>
-    document.getElementById("popup").style.display = "none";
-
-
-// -------------------------
-// EXPENSE FUNCTIONALITY
-// -------------------------
-let expenseRows = [];
-
-document.getElementById("expenseBtn").onclick = function () {
-    Papa.parse(expenseCsvUrl, {
-        download: true,
-        header: true,
-        skipEmptyLines: true,
-        complete: function(results) {
-            expenseRows = results.data || [];
-            prepareExpenseFilters(expenseRows);
-            filterAndShowExpenses();
-            document.getElementById("expensePopup").style.display = "flex";
-        }
-    });
+/* -------------------------
+   State & chart holders
+   ------------------------- */
+let cowRows = [], expenseRows = [], milkRows = [];
+const charts = {
+  expenseBar:{chartInstance:null}, expensePie:{chartInstance:null},
+  monthlyExpense:{chartInstance:null}, incomeExpense:{chartInstance:null},
+  milkLine:{chartInstance:null}, monthlyMilk:{chartInstance:null},
+  milkPerCow:{chartInstance:null}
 };
 
-function prepareExpenseFilters(rows) {
-    let years = new Set();
-    let categories = new Set();
+/* -------------------------
+   Load Cow CSV and render cards
+   ------------------------- */
+Papa.parse(cowCsvUrl, {
+  download:true, header:true, skipEmptyLines:true, transformHeader:cleanHeader,
+  complete: function(res){
+    cowRows = res.data || [];
+    renderCards(cowRows);
+  }
+});
 
-    rows.forEach(row => {
-        const d = parseDateFlexible(row["Date"]);
-        if (d) years.add(d.getFullYear());
-        if (row["Category"]) categories.add(row["Category"].trim());
-    });
-
-    years = [...years].sort();
-    categories = [...categories].sort();
-
-    const YF = document.getElementById("yearFrom");
-    const YT = document.getElementById("yearTo");
-    const CAT = document.getElementById("expCategory");
-
-    YF.innerHTML = "";
-    YT.innerHTML = "";
-
-    years.forEach(y => {
-        YF.innerHTML += `<option value="${y}">${y}</option>`;
-        YT.innerHTML += `<option value="${y}">${y}</option>`;
-    });
-
-    if (years.length > 0) {
-        YF.value = years[0];
-        YT.value = years[years.length - 1];
-    }
-
-    CAT.innerHTML = `<option value="">All</option>`;
-    categories.forEach(c => {
-        CAT.innerHTML += `<option value="${c}">${c}</option>`;
-    });
-
-    YF.onchange = filterAndShowExpenses;
-    YT.onchange = filterAndShowExpenses;
-    CAT.onchange = filterAndShowExpenses;
+function renderCards(rows){
+  const container = document.getElementById("cardContainer");
+  container.innerHTML = "";
+  rows.forEach(row=>{
+    if(Object.values(row).every(v=>!v)) return;
+    const card = document.createElement("div"); card.className="card";
+    const cowName = row["Cow"] || row["Name"] || "Unknown";
+    card.innerHTML = `<h3>${escapeHtml(cowName)}</h3>
+      <p><b>Breed:</b> ${escapeHtml(row["Breed"]||"")}</p>
+      <p><b>Status:</b> ${escapeHtml(row["Status"]||"")}</p>`;
+    const btn = document.createElement("button"); btn.className="view-btn"; btn.innerText="View Profile";
+    btn.onclick = ()=> showProfile(row);
+    card.appendChild(btn); container.appendChild(card);
+  });
 }
 
-function filterAndShowExpenses() {
-    const YF = parseInt(document.getElementById("yearFrom").value);
-    const YT = parseInt(document.getElementById("yearTo").value);
-    const CAT = document.getElementById("expCategory").value;
+/* -------------------------
+   Profile popup
+   ------------------------- */
+function showProfile(data){
+  document.getElementById("popup").style.display="flex";
+  document.getElementById("pName").innerText = data["Cow"]||data["Name"]||"Profile";
+  let html="";
+  Object.keys(data).forEach(k=>{
+    html += `<div><b>${escapeHtml(k)}:</b> ${escapeHtml(data[k])}</div>`;
+  });
+  document.getElementById("pDetails").innerHTML = html;
+}
+document.getElementById("closeBtn").onclick = ()=> document.getElementById("popup").style.display="none";
 
-    let totals = {};
-    let overall = 0;
+/* -------------------------
+   Expense + Milk loader & filters
+   ------------------------- */
+document.getElementById("expenseBtn").onclick = function(){
+  // load both expense and milk (they are small) then prepare filters & charts
+  Promise.all([loadExpenseCSV(), loadMilkCSV()]).then(()=>{
+    prepareExpenseFilters(expenseRows);
+    prepareMilkCharts(milkRows);
+    openExpensePopup();
+  }).catch(err=>{
+    alert("Failed to load data: "+err);
+  });
+};
 
-    expenseRows.forEach(row => {
-        const d = parseDateFlexible(row["Date"]);
-        if (!d) return;
-
-        let yr = d.getFullYear();
-        let cat = (row["Category"] || "").trim();
-        let amt = parseFloat(row["Amount"] || row["Rs"] || 0);
-
-        if (!cat || isNaN(amt)) return;
-
-        if (yr < YF || yr > YT) return;
-        if (CAT && CAT !== cat) return;
-
-        if (!totals[cat]) totals[cat] = 0;
-        totals[cat] += amt;
-        overall += amt;
+function loadExpenseCSV(){
+  return new Promise((resolve, reject)=>{
+    Papa.parse(expenseCsvUrl, {
+      download:true, header:true, skipEmptyLines:true, transformHeader:cleanHeader,
+      complete:function(res){
+        expenseRows = res.data || [];
+        resolve(expenseRows);
+      },
+      error: function(err){ reject(err); }
     });
-
-    let html = `
-    <table style="width:100%; border-collapse:collapse;">
-        <tr style="background:#ddd;">
-            <th style="padding:8px; border:1px solid #ccc;">Category</th>
-            <th style="padding:8px; border:1px solid #ccc;">Total (Rs)</th>
-        </tr>
-    `;
-
-    Object.keys(totals).forEach(cat => {
-        html += `
-        <tr>
-            <td style="padding:8px; border:1px solid #ccc;">${cat}</td>
-            <td style="padding:8px; border:1px solid #ccc;">${totals[cat].toFixed(2)}</td>
-        </tr>`;
-    });
-
-    html += `
-        <tr style="background:#cfe3ff;">
-            <td style="padding:8px; border:1px solid #ccc;"><b>Total</b></td>
-            <td style="padding:8px; border:1px solid #ccc;"><b>${overall.toFixed(2)}</b></td>
-        </tr>
-    `;
-
-    html += "</table>";
-
-    document.getElementById("expenseData").innerHTML = html;
+  });
 }
 
-document.getElementById("expenseClose").onclick = () =>
-    document.getElementById("expensePopup").style.display = "none";
-
-
-// -------------------------
-// SECURITY
-// -------------------------
-function escapeHtml(str) {
-    return String(str || "")
-        .replace(/&/g, "&amp;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#39;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
+function loadMilkCSV(){
+  return new Promise((resolve,reject)=>{
+    Papa.parse(milkCsvUrl, {
+      download:true, header:true, skipEmptyLines:true, transformHeader:cleanHeader,
+      complete:function(res){
+        milkRows = res.data || [];
+        resolve(milkRows);
+      },
+      error:function(err){ reject(err); }
+    });
+  });
 }
+
+/* -------------------------
+   Expense filters & table
+   ------------------------- */
+function prepareExpenseFilters(rows){
+  const years = new Set(), categories = new Set();
+  rows.forEach(r=>{
+    const d = parseDateFlexible(r["Timestamp"] || r["Date"] || r["timestamp"]);
+    if(d) years.add(d.getFullYear());
+    let cat = (r["Category"] || r[" category"] || r["Category "] || "").toString().trim();
+    if(cat) categories.add(cat);
+  });
+  const yearsArr = [...years].sort();
+  const YF = document.getElementById("yearFrom"), YT = document.getElementById("yearTo"), CAT = document.getElementById("expCategory");
+  YF.innerHTML=""; YT.innerHTML=""; CAT.innerHTML = `<option value="">All</option>`;
+  yearsArr.forEach(y=>{
+    YF.innerHTML += `<option value="${y}">${y}</option>`;
+    YT.innerHTML += `<option value="${y}">${y}</option>`;
+  });
+  if(yearsArr.length>0){ YF.value = yearsArr[0]; YT.value = yearsArr[yearsArr.length-1]; }
+  [...categories].sort().forEach(c=> CAT.innerHTML += `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`);
+  YF.onchange = filterAndShowExpenses; YT.onchange = filterAndShowExpenses; CAT.onchange = filterAndShowExpenses;
+}
+
+function openExpensePopup(){
+  filterAndShowExpenses();
+  document.getElementById("expensePopup").style.display="flex";
+}
+
+function filterAndShowExpenses(){
+  const YF = parseInt(document.getElementById("yearFrom").value);
+  const YT = parseInt(document.getElementById("yearTo").value);
+  const CAT = document.getElementById("expCategory").value;
+  let totalsByCategory = {}, overall=0;
+  let monthlyExpense = {}; // YYYY-MM -> total
+  expenseRows.forEach(r=>{
+    const d = parseDateFlexible(r["Timestamp"]||r["Date"]||r["timestamp"]);
+    if(!d) return;
+    const yr = d.getFullYear(); if(yr < YF || yr > YT) return;
+    let cat = (r["Category"]||r[" category"]||r["Category "]||"").toString().trim();
+    if(!cat) return;
+    if(CAT && CAT !== cat) return;
+    // amount
+    let amt = parseFloat( (r["Rs"]||r["Amount"]||r["Value"]||"0").toString().replace(/,/g,'') ) || 0;
+    if(!totalsByCategory[cat]) totalsByCategory[cat]=0;
+    totalsByCategory[cat]+=amt;
+    overall += amt;
+    // monthly
+    const mk = monthKey(d);
+    monthlyExpense[mk] = (monthlyExpense[mk]||0) + amt;
+  });
+
+  // Expense table
+  let html = `<table><tr><th>Category</th><th>Total (Rs)</th></tr>`;
+  Object.keys(totalsByCategory).forEach(cat=>{
+    html += `<tr><td>${escapeHtml(cat)}</td><td>${totalsByCategory[cat].toFixed(2)}</td></tr>`;
+  });
+  html += `<tr style="background:#cfe3ff"><td><b>Total</b></td><td><b>${overall.toFixed(2)}</b></td></tr></table>`;
+  document.getElementById("expenseData").innerHTML = html;
+
+  // Prepare charts: category bar & pie
+  const catLabels = Object.keys(totalsByCategory);
+  const catData = catLabels.map(l => totalsByCategory[l]);
+
+  // Monthly line data (merge milk income later)
+  const monthKeys = Object.keys(monthlyExpense).sort();
+  const monthLabels = monthKeys;
+  const monthValues = monthKeys.map(k => monthlyExpense[k]);
+
+  // build charts
+  createOrUpdateChart(charts.expenseBar, document.getElementById("expenseBarChart").getContext("2d"), {
+    type: 'bar',
+    data: { labels: catLabels, datasets: [{ label: 'Expense (Rs)', data: catData, backgroundColor: catLabels.map((_,i)=>`hsl(${(i*50)%360} 70% 50%)`) }] },
+    options: { responsive:true, plugins:{legend:{display:false}} }
+  });
+
+  createOrUpdateChart(charts.expensePie, document.getElementById("expensePieChart").getContext("2d"), {
+    type:'pie',
+    data:{ labels:catLabels, datasets:[{ data:catData }]},
+    options:{responsive:true}
+  });
+
+  createOrUpdateChart(charts.monthlyExpense, document.getElementById("monthlyExpenseLine").getContext("2d"), {
+    type:'line',
+    data:{ labels:monthLabels, datasets:[{ label:'Monthly Expense (Rs)', data:monthValues, fill:false, tension:0.2 }]},
+    options:{responsive:true, scales:{x:{title:{display:true,text:'Month'}}}}
+  });
+
+  // Income vs Expense: compute income from milk (monthly)
+  const monthlyIncome = {}; // YYYY-MM -> total income (Payment)
+  milkRows.forEach(m=>{
+    // use Start Date if available else Timestamp
+    const sd = parseDateFlexible(m["Start Date"]||m["StartDate"]||m["Timestamp"]||m["timestamp"]);
+    if(!sd) return;
+    const mk = monthKey(sd);
+    const inc = parseFloat( (m["Payment"]||m["Income"]||"0").toString().replace(/,/g,'') ) || 0;
+    monthlyIncome[mk] = (monthlyIncome[mk]||0) + inc;
+  });
+
+  // combine months
+  const allMonths = Array.from(new Set([ ...Object.keys(monthlyExpense), ...Object.keys(monthlyIncome) ])).sort();
+  const incomeVals = allMonths.map(k => monthlyIncome[k]||0);
+  const expenseVals = allMonths.map(k => monthlyExpense[k]||0);
+
+  createOrUpdateChart(charts.incomeExpense, document.getElementById("incomeExpenseChart").getContext("2d"), {
+    type:'line',
+    data:{ labels:allMonths, datasets:[
+      { label:'Income (Rs)', data:incomeVals, borderColor:'green', tension:0.2, fill:false },
+      { label:'Expense (Rs)', data:expenseVals, borderColor:'red', tension:0.2, fill:false }
+    ]},
+    options:{responsive:true}
+  });
+}
+
+/* -------------------------
+   Milk charts
+   ------------------------- */
+function prepareMilkCharts(rows){
+  // produce arrays for weekly points (by Start Date)
+  const points = []; // {date, milk, income, cow?}
+  rows.forEach(r=>{
+    // prefer Start Date, fallback to Timestamp
+    const sd = parseDateFlexible(r["Start Date"]||r["StartDate"]||r["Timestamp"]||r["timestamp"]);
+    if(!sd) return;
+    const milk = parseFloat( (r["Produce Milk"]||r["ProduceMilk"]||r["Produce_milk"]||r["milk"]||"0").toString().replace(/,/g,'') ) || 0;
+    const income = parseFloat( (r["Payment"]||r["Income"]||"0").toString().replace(/,/g,'') ) || 0;
+    const cow = r["Cow"] || r["cow"] || r["Animal"] || "";
+    points.push({ date: sd, milk, income, cow });
+  });
+  // sort by date
+  points.sort((a,b)=>a.date - b.date);
+
+  // time series for milk by date (weekly)
+  const labels = points.map(p => p.date.toISOString().slice(0,10));
+  const milkData = points.map(p => p.milk);
+
+  createOrUpdateChart(charts.milkLine, document.getElementById("milkLineChart").getContext("2d"), {
+    type:'line',
+    data:{ labels, datasets:[{ label:'Milk (Produce Milk)', data:milkData, tension:0.2 }]},
+    options:{responsive:true, plugins:{legend:{display:false}}}
+  });
+
+  // monthly aggregated milk
+  const monthlyMilk = {};
+  points.forEach(p => {
+    const mk = monthKey(p.date);
+    monthlyMilk[mk] = (monthlyMilk[mk]||0) + p.milk;
+  });
+  const mLabels = Object.keys(monthlyMilk).sort();
+  const mVals = mLabels.map(k=>monthlyMilk[k]);
+
+  createOrUpdateChart(charts.monthlyMilk, document.getElementById("monthlyMilkLine").getContext("2d"), {
+    type:'line',
+    data:{ labels:mLabels, datasets:[{ label:'Monthly Milk', data:mVals, borderColor:'blue', tension:0.2 }]},
+    options:{responsive:true}
+  });
+
+  // per-cow chart if cow present
+  const cowExists = points.some(p=>p.cow && p.cow.trim());
+  if(cowExists){
+    const perCow = {}; // cow -> {date->milk}
+    points.forEach(p=>{
+      const name = (p.cow||"Unknown").toString().trim();
+      if(!perCow[name]) perCow[name] = {};
+      const k = p.date.toISOString().slice(0,10);
+      perCow[name][k] = (perCow[name][k]||0) + p.milk;
+    });
+    // unify all dates
+    const allDates = Array.from(new Set(points.map(p=>p.date.toISOString().slice(0,10)))).sort();
+    const datasets = Object.keys(perCow).map((cowName, idx) => {
+      return {
+        label: cowName,
+        data: allDates.map(d => perCow[cowName][d]||0),
+        tension:0.2,
+        borderColor: `hsl(${(idx*70)%360} 70% 45%)`,
+        fill:false
+      };
+    });
+    createOrUpdateChart(charts.milkPerCow, document.getElementById("milkPerCowChart").getContext("2d"), {
+      type:'line',
+      data:{ labels: allDates, datasets },
+      options:{responsive:true}
+    });
+  } else {
+    // hide or show message if no cow data
+    document.getElementById("milkPerCowChart").getContext("2d").clearRect(0,0,10000,10000);
+    if(charts.milkPerCow.chartInstance){ charts.milkPerCow.chartInstance.destroy(); charts.milkPerCow.chartInstance = null; }
+    // draw simple message onto canvas
+    const ctx = document.getElementById("milkPerCowChart").getContext("2d");
+    ctx.font = "16px Arial"; ctx.fillStyle="black";
+    ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height);
+    ctx.fillText("No per-cow identifier column found in Milk Count sheet.", 10, 30);
+  }
+}
+
+/* -------------------------
+   Close popup
+   ------------------------- */
+document.getElementById("expenseClose").onclick = ()=>{
+  document.getElementById("expensePopup").style.display="none";
+};
+
+/* -------------------------
+   Small helper
+   ------------------------- */
+function escapeHtml(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
 </script>
-
 </body>
 </html>
